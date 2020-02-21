@@ -5,7 +5,7 @@ module Administrate
     class DashboardGenerator < Rails::Generators::NamedBase
       ATTRIBUTE_TYPE_MAPPING = {
         boolean: "Field::Boolean",
-        date: "Field::DateTime",
+        date: "Field::Date",
         datetime: "Field::DateTime",
         enum: "Field::String",
         float: "Field::Number",
@@ -50,7 +50,9 @@ module Administrate
       end
 
       def attributes
-        klass.reflections.keys + klass.attribute_names - redundant_attributes
+        klass.reflections.keys +
+          klass.columns.map(&:name) -
+          redundant_attributes
       end
 
       def form_attributes

@@ -11,7 +11,7 @@ module Administrate
 
       order = "#{relation.table_name}.#{attribute} #{direction}"
 
-      return relation.reorder(order) if
+      return relation.reorder(Arel.sql(order)) if
         relation.columns_hash.keys.include?(attribute.to_s)
 
       relation
@@ -56,13 +56,13 @@ module Administrate
 
     def order_by_count(relation)
       relation.
-      left_joins(attribute.to_sym).
-      group(:id).
-      reorder("COUNT(#{attribute}.id) #{direction}")
+        left_joins(attribute.to_sym).
+        group(:id).
+        reorder("COUNT(#{attribute}.id) #{direction}")
     end
 
     def order_by_id(relation)
-      relation.reorder("#{attribute}_id #{direction}")
+      relation.reorder("#{foreign_key(relation)} #{direction}")
     end
 
     def has_many_attribute?(relation)
@@ -75,6 +75,10 @@ module Administrate
 
     def reflect_association(relation)
       relation.klass.reflect_on_association(attribute.to_s)
+    end
+
+    def foreign_key(relation)
+      reflect_association(relation).foreign_key
     end
   end
 end

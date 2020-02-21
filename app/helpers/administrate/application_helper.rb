@@ -1,6 +1,16 @@
+# frozen_string_literal: true
+
 module Administrate
   module ApplicationHelper
     PLURAL_MANY_COUNT = 2.1
+
+    def application_title
+      if Rails::VERSION::MAJOR <= 5
+        Rails.application.class.parent_name.titlecase
+      else
+        Rails.application.class.module_parent_name.titlecase
+      end
+    end
 
     def render_field(field, locals = {})
       locals[:field] = field
@@ -11,25 +21,48 @@ module Administrate
       "#{resource_name.to_s.singularize}_dashboard".classify.constantize
     end
 
+    def requireness(field)
+      required_field?(field) ? 'required' : 'optional'
+    end
+
+    def required_field?(field)
+      has_presence_validator?(field.resource.class, field.attribute)
+    end
+
+    def has_presence_validator?(resource_class, field_name)
+      validators_on(resource_class, field_name)
+        .any? { |v| v.class == ActiveRecord::Validations::PresenceValidator }
+    end
+
+    def validators_on(resource_class, field_name)
+      return [] unless resource_class.respond_to?(:validators_on)
+
+      resource_class.validators_on(field_name)
+    end
+
+    def class_from_resource(resource_name)
+      resource_name.to_s.classify.constantize
+    end
+
     def display_resource_name(resource_name)
       dashboard_from_resource(resource_name).resource_name(
         count: PLURAL_MANY_COUNT,
-        default: default_resource_name(resource_name),
+        default: default_resource_name(resource_name)
       )
     end
 
     def sort_order(order)
       case order
-      when "asc" then "ascending"
-      when "desc" then "descending"
-      else "none"
+      when 'asc' then 'ascending'
+      when 'desc' then 'descending'
+      else 'none'
       end
     end
 
     def resource_index_route(resource_name)
       url_for(
-        action: "index",
-        controller: "/#{namespace}/#{resource_name}",
+        action: 'index',
+        controller: "/#{namespace}/#{resource_name}"
       )
     end
 
@@ -50,7 +83,7 @@ module Administrate
     private
 
     def default_resource_name(resource_name)
-      resource_name.to_s.pluralize.gsub("/", "_").titleize
+      resource_name.to_s.pluralize.gsub('/', '_').titleize
     end
   end
 end
